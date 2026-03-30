@@ -14,7 +14,7 @@ help:
 
 # Build everything
 build:
-	@python scripts/build_wheel.py
+	@uv run python scripts/build_wheel.py
 
 # Build only frontend
 build-frontend:
@@ -25,17 +25,17 @@ build-frontend:
 
 # Build only wheel
 build-wheel:
-	@python scripts/build_wheel.py --skip-frontend
+	@uv run python scripts/build_wheel.py --skip-frontend
 
 # Build and install
 install: build
-	@pip install dist/*.whl
+	@uv pip install dist/*.whl
 	@echo "✓ Clove installed successfully"
 	@echo "Run 'clove' to start the application"
 
 # Install in development mode
 install-dev:
-	@pip install -e .
+	@uv pip install -e .
 	@echo "✓ Clove installed in development mode"
 
 # Clean build artifacts
@@ -47,6 +47,10 @@ clean:
 	@find . -type f -name "*.pyo" -delete
 	@echo "✓ Cleaned build artifacts"
 
+# Run tests
+test:
+	@uv run pytest tests/
+
 # Run the application (development mode)
 run:
-	@python -m app.main
+	@uv run python -m app.main
