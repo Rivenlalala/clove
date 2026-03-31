@@ -101,8 +101,8 @@ class RequestLogProcessor(BaseProcessor):
             output_tokens = context.collected_message.usage.output_tokens
 
         if oauth_usage is not None:
-            cache_read = str(oauth_usage.get("cache_read_input_tokens", 0) > 0).lower()
-            cache_write = str(oauth_usage.get("cache_creation_input_tokens", 0) > 0).lower()
+            cache_read = oauth_usage.get("cache_read_input_tokens", 0)
+            cache_write = oauth_usage.get("cache_creation_input_tokens", 0)
         else:
             cache_read = str(context.metadata.get("cache_read", False)).lower()
             cache_write = str(context.metadata.get("cache_write", False)).lower()
