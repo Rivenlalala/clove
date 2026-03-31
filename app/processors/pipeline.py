@@ -1,3 +1,4 @@
+import time
 from typing import List, Optional
 from loguru import logger
 
@@ -34,6 +35,7 @@ class ProcessingPipeline(BaseProcessor):
         """
 
         logger.debug("Starting pipeline processing")
+        context.metadata["request_start_time"] = time.monotonic()
 
         # Process through each processor
         for i, processor in enumerate(self.processors):

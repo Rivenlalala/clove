@@ -73,7 +73,6 @@ class ClaudeAPIProcessor(BaseProcessor):
                 context.messages_api_request.messages,
                 context.messages_api_request.system,
             )
-
             account = None
             if cached_account_id:
                 account = await account_manager.get_account_by_id(cached_account_id)
@@ -177,8 +176,19 @@ class ClaudeAPIProcessor(BaseProcessor):
                     headers=filtered_headers,
                 )
 
-                # Stop pipeline on success
-                context.metadata["stop_pipeline"] = True
+                context.metadata["skip_processors"] = [
+                    "ClaudeWebProcessor",
+                    "EventParsingProcessor",
+                    "ModelInjectorProcessor",
+                    "StopSequencesProcessor",
+                    "ToolCallEventProcessor",
+                    "MessageCollectorProcessor",
+                    "TokenCounterProcessor",
+                    "StreamingResponseProcessor",
+                    "NonStreamingResponseProcessor",
+                ]
+                context.metadata["account_id"] = account.organization_uuid
+                context.metadata["oauth_path"] = True
                 logger.info("Successfully processed request via Claude API")
 
                 # Store checkpoints in cache service after successful request

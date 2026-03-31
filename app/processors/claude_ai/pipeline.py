@@ -23,6 +23,7 @@ from app.processors.claude_ai.tool_result_processor import ToolResultProcessor
 from app.processors.claude_ai.tool_call_event_processor import ToolCallEventProcessor
 from app.processors.claude_ai.stop_sequences_processor import StopSequencesProcessor
 from app.processors.claude_ai.model_injector_processor import ModelInjectorProcessor
+from app.processors.claude_ai.request_log_processor import RequestLogProcessor
 
 
 class ClaudeAIPipeline(ProcessingPipeline):
@@ -47,6 +48,7 @@ class ClaudeAIPipeline(ProcessingPipeline):
                 TokenCounterProcessor(),
                 StreamingResponseProcessor(),
                 NonStreamingResponseProcessor(),
+                RequestLogProcessor(),
             ]
             if processors is None
             else processors
