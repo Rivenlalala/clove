@@ -25,6 +25,9 @@ from app.processors.claude_ai.stop_sequences_processor import StopSequencesProce
 from app.processors.claude_ai.model_injector_processor import ModelInjectorProcessor
 from app.processors.claude_ai.request_log_processor import RequestLogProcessor
 from app.processors.claude_ai.content_log_processor import ContentLogProcessor
+from app.processors.claude_ai.header_manipulation_processor import (
+    HeaderManipulationProcessor,
+)
 
 
 class ClaudeAIPipeline(ProcessingPipeline):
@@ -37,6 +40,7 @@ class ClaudeAIPipeline(ProcessingPipeline):
         """
         processors = (
             [
+                HeaderManipulationProcessor(),
                 TestMessageProcessor(),
                 ToolResultProcessor(),
                 ClaudeAPIProcessor(),
