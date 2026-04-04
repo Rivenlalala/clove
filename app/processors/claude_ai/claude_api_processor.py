@@ -179,6 +179,12 @@ class ClaudeAPIProcessor(BaseProcessor):
                         continue
                     filtered_headers[key] = value
 
+                # Stash outbound response headers for content logging
+                if settings.content_log_enabled:
+                    context.metadata["outbound_response_headers"] = dict(
+                        filtered_headers
+                    )
+
                 context.response = StreamingResponse(
                     stream_response(),
                     status_code=response.status_code,

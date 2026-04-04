@@ -96,9 +96,8 @@ class MessageCollectorProcessor(BaseProcessor):
 
             elif isinstance(event.root, ContentBlockStopEvent):
                 # Boundary checking to prevent IndexError caused by refusal responses
-                if (
-                    context.collected_message
-                    and event.root.index < len(context.collected_message.content)
+                if context.collected_message and event.root.index < len(
+                    context.collected_message.content
                 ):
                     block = context.collected_message.content[event.root.index]
                     if isinstance(block, (ToolUseContent, ServerToolUseContent)):
@@ -136,8 +135,8 @@ class MessageCollectorProcessor(BaseProcessor):
                                     type="error",
                                     error=ErrorInfo(
                                         type="refusal",
-                                        message="Chat paused: Claude's safety filters flagged this message. This occasionally happens with normal, safe messages. Try rephrasing or using a different model."
-                                    )
+                                        message="Chat paused: Claude's safety filters flagged this message. This occasionally happens with normal, safe messages. Try rephrasing or using a different model.",
+                                    ),
                                 )
                             )
                             yield error_event

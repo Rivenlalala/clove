@@ -138,12 +138,14 @@ class ClaudeHttpError(AppError):
         context: Optional[Dict[str, Any]] = None,
     ):
         _context = context.copy() if context else {}
-        _context.update({
-            "url": url,
-            "status_code": status_code,
-            "error_type": error_type,
-            "error_message": error_message,
-        })
+        _context.update(
+            {
+                "url": url,
+                "status_code": status_code,
+                "error_type": error_type,
+                "error_message": error_message,
+            }
+        )
         super().__init__(
             error_code=503130,
             message_key="claudeClient.httpError",
@@ -251,10 +253,12 @@ class ClaudeStreamingError(AppError):
         context: Optional[Dict[str, Any]] = None,
     ):
         _context = context.copy() if context else {}
-        _context.update({
-            "error_type": error_type,
-            "error_message": error_message,
-        })
+        _context.update(
+            {
+                "error_type": error_type,
+                "error_message": error_message,
+            }
+        )
         super().__init__(
             error_code=503500,
             message_key="processors.nonStreamingResponseProcessor.streamingError",

@@ -71,7 +71,11 @@ SKIP_PROCESSORS_EXPECTED = [
 
 class TestClaudeAPIProcessorMetadata(unittest.TestCase):
     def _run_processor(
-        self, cached_account_id=None, checkpoints=None, account=None, raise_no_accounts=False
+        self,
+        cached_account_id=None,
+        checkpoints=None,
+        account=None,
+        raise_no_accounts=False,
     ):
         """Helper to run the processor with configurable mocks."""
         if checkpoints is None:
@@ -116,7 +120,9 @@ class TestClaudeAPIProcessorMetadata(unittest.TestCase):
         return result
 
     def test_no_cache_read_write_in_metadata(self):
-        result = self._run_processor(cached_account_id="cached-id-123", checkpoints=["cp1"])
+        result = self._run_processor(
+            cached_account_id="cached-id-123", checkpoints=["cp1"]
+        )
         self.assertNotIn("cache_read", result.metadata)
         self.assertNotIn("cache_write", result.metadata)
 

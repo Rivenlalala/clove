@@ -19,7 +19,6 @@ Task 7.3: Non-interference with existing proxy behavior
 """
 
 import asyncio
-import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -34,11 +33,19 @@ from app.processors.claude_ai.context import ClaudeAIContext
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_request(body: bytes = b'{"model": "claude-3"}', method: str = "POST", path: str = "/v1/messages"):
+
+def _make_request(
+    body: bytes = b'{"model": "claude-3"}',
+    method: str = "POST",
+    path: str = "/v1/messages",
+):
     req = MagicMock()
     req.method = method
     req.url.path = path
-    req.headers = {"content-type": "application/json", "authorization": "Bearer sk-ant-test"}
+    req.headers = {
+        "content-type": "application/json",
+        "authorization": "Bearer sk-ant-test",
+    }
     req.body = AsyncMock(return_value=body)
     return req
 
@@ -76,12 +83,14 @@ def _make_streaming_response(chunks=None):
 # Task 7.1: Content logger utility in isolation
 # ---------------------------------------------------------------------------
 
+
 class TestTimestampMillisecondPrecision(unittest.TestCase):
     """Verify _timestamp() produces millisecond-precision output."""
 
     def test_timestamp_includes_milliseconds(self):
         """_timestamp() must include millisecond component (3 decimal digits on seconds)."""
         from app.utils.content_logger import _timestamp
+
         ts = _timestamp()
         # Format: "YYYY-MM-DD HH:MM:SS.mmm" — milliseconds are 3 digits after dot
         self.assertRegex(ts, r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}$")
@@ -89,6 +98,7 @@ class TestTimestampMillisecondPrecision(unittest.TestCase):
     def test_timestamp_returned_as_string(self):
         """_timestamp() must return a string."""
         from app.utils.content_logger import _timestamp
+
         self.assertIsInstance(_timestamp(), str)
 
 
@@ -97,6 +107,7 @@ class TestNoFileCreatedWhenDisabled(unittest.TestCase):
 
     def setUp(self):
         import app.utils.content_logger as mod
+
         mod.content_log = None
 
     def test_no_file_created_on_disk_when_disabled(self):
@@ -113,7 +124,9 @@ class TestNoFileCreatedWhenDisabled(unittest.TestCase):
             with patch("app.utils.content_logger.settings", settings):
                 mod.configure_content_logger()
 
-            self.assertFalse(log_path.exists(), "Log file must not be created when disabled")
+            self.assertFalse(
+                log_path.exists(), "Log file must not be created when disabled"
+            )
 
     def test_content_log_none_after_disabled_configure(self):
         """Module-level content_log must remain None after configure when disabled."""
@@ -132,6 +145,7 @@ class TestNoFileCreatedWhenDisabled(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # Task 7.2: Processor integration — three-entry flow
 # ---------------------------------------------------------------------------
+
 
 class TestThreeEntriesNonStreamingRequest(unittest.TestCase):
     """Verify all three entries (inbound request, outbound request, response) are produced
@@ -153,7 +167,9 @@ class TestThreeEntriesNonStreamingRequest(unittest.TestCase):
         request_calls = []
         response_calls = []
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
             with patch(
                 "app.processors.claude_ai.content_log_processor.log_request_entry",
@@ -169,8 +185,12 @@ class TestThreeEntriesNonStreamingRequest(unittest.TestCase):
 
     def test_three_entries_total_json_response(self):
         """Exactly two request entries and one response entry for a complete non-streaming pass."""
-        request_calls, response_calls = self._run("https://api.anthropic.com/v1/messages")
-        self.assertEqual(len(request_calls), 2, "Expected inbound + outbound request entries")
+        request_calls, response_calls = self._run(
+            "https://api.anthropic.com/v1/messages"
+        )
+        self.assertEqual(
+            len(request_calls), 2, "Expected inbound + outbound request entries"
+        )
         self.assertEqual(len(response_calls), 1, "Expected exactly one response entry")
 
     def test_inbound_entry_present(self):
@@ -208,16 +228,21 @@ class TestOAuthPathThreeEntries(unittest.TestCase):
         processor = ContentLogProcessor()
         outbound_status_lines = []
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
             with patch(
                 "app.processors.claude_ai.content_log_processor.log_request_entry",
                 side_effect=lambda direction, req_id, status_line, *a, **kw: (
                     outbound_status_lines.append(status_line)
-                    if direction == ">>> OUTBOUND REQUEST" else None
+                    if direction == ">>> OUTBOUND REQUEST"
+                    else None
                 ),
             ):
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry"):
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ):
                     asyncio.run(processor.process(context))
 
         self.assertEqual(len(outbound_status_lines), 1)
@@ -242,16 +267,21 @@ class TestWebPathThreeEntries(unittest.TestCase):
         processor = ContentLogProcessor()
         outbound_status_lines = []
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
             with patch(
                 "app.processors.claude_ai.content_log_processor.log_request_entry",
                 side_effect=lambda direction, req_id, status_line, *a, **kw: (
                     outbound_status_lines.append(status_line)
-                    if direction == ">>> OUTBOUND REQUEST" else None
+                    if direction == ">>> OUTBOUND REQUEST"
+                    else None
                 ),
             ):
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry"):
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ):
                     asyncio.run(processor.process(context))
 
         self.assertEqual(len(outbound_status_lines), 1)
@@ -273,7 +303,9 @@ class TestPartialLoggingEarlyFailure(unittest.TestCase):
         request_calls = []
         response_calls = []
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
             with patch(
                 "app.processors.claude_ai.content_log_processor.log_request_entry",
@@ -285,7 +317,11 @@ class TestPartialLoggingEarlyFailure(unittest.TestCase):
                 ):
                     asyncio.run(processor.process(context))
 
-        self.assertEqual(len(request_calls), 1, "Only inbound request entry when no outbound metadata")
+        self.assertEqual(
+            len(request_calls),
+            1,
+            "Only inbound request entry when no outbound metadata",
+        )
         self.assertEqual(request_calls[0], ">>> INBOUND REQUEST")
         self.assertEqual(len(response_calls), 1, "Response entry still produced")
 
@@ -301,10 +337,16 @@ class TestNoLoggingWhenDisabledIntegration(unittest.TestCase):
         context.response = _make_json_response()
         processor = ContentLogProcessor()
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = False
-            with patch("app.processors.claude_ai.content_log_processor.log_request_entry") as mock_req:
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry") as mock_resp:
+            with patch(
+                "app.processors.claude_ai.content_log_processor.log_request_entry"
+            ) as mock_req:
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ) as mock_resp:
                     asyncio.run(processor.process(context))
 
         mock_req.assert_not_called()
@@ -320,10 +362,16 @@ class TestNoLoggingWhenDisabledIntegration(unittest.TestCase):
         context.response = streaming_resp
         processor = ContentLogProcessor()
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = False
-            with patch("app.processors.claude_ai.content_log_processor.log_request_entry") as mock_req:
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry") as mock_resp:
+            with patch(
+                "app.processors.claude_ai.content_log_processor.log_request_entry"
+            ) as mock_req:
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ) as mock_resp:
                     asyncio.run(processor.process(context))
 
         mock_req.assert_not_called()
@@ -334,6 +382,7 @@ class TestNoLoggingWhenDisabledIntegration(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # Task 7.3: Non-interference with existing proxy behavior
 # ---------------------------------------------------------------------------
+
 
 class TestWriteFailureLogsWarning(unittest.TestCase):
     """Verify content log write failures emit a warning to the main log and never propagate."""
@@ -346,14 +395,20 @@ class TestWriteFailureLogsWarning(unittest.TestCase):
         context.response = _make_json_response()
         processor = ContentLogProcessor()
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
             with patch(
                 "app.processors.claude_ai.content_log_processor.log_request_entry",
                 side_effect=RuntimeError("disk full"),
             ):
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry"):
-                    with patch("app.processors.claude_ai.content_log_processor.logger") as mock_logger:
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ):
+                    with patch(
+                        "app.processors.claude_ai.content_log_processor.logger"
+                    ) as mock_logger:
                         result = asyncio.run(processor.process(context))
 
         self.assertIs(result, context)
@@ -367,14 +422,20 @@ class TestWriteFailureLogsWarning(unittest.TestCase):
         context.response = _make_json_response()
         processor = ContentLogProcessor()
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
-            with patch("app.processors.claude_ai.content_log_processor.log_request_entry"):
+            with patch(
+                "app.processors.claude_ai.content_log_processor.log_request_entry"
+            ):
                 with patch(
                     "app.processors.claude_ai.content_log_processor.log_response_entry",
                     side_effect=RuntimeError("permission denied"),
                 ):
-                    with patch("app.processors.claude_ai.content_log_processor.logger") as mock_logger:
+                    with patch(
+                        "app.processors.claude_ai.content_log_processor.logger"
+                    ) as mock_logger:
                         result = asyncio.run(processor.process(context))
 
         self.assertIs(result, context)
@@ -388,17 +449,26 @@ class TestResponseDataUnmodified(unittest.TestCase):
         """JSON response body must be byte-identical before and after ContentLogProcessor."""
         from app.processors.claude_ai.content_log_processor import ContentLogProcessor
 
-        original_body = {"type": "message", "content": [{"type": "text", "text": "Original content"}]}
+        original_body = {
+            "type": "message",
+            "content": [{"type": "text", "text": "Original content"}],
+        }
         context = _make_context()
         response = _make_json_response(body=original_body)
         body_before = bytes(response.body)
         context.response = response
         processor = ContentLogProcessor()
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
-            with patch("app.processors.claude_ai.content_log_processor.log_request_entry"):
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry"):
+            with patch(
+                "app.processors.claude_ai.content_log_processor.log_request_entry"
+            ):
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ):
                     asyncio.run(processor.process(context))
 
         self.assertEqual(bytes(context.response.body), body_before)
@@ -416,10 +486,16 @@ class TestResponseDataUnmodified(unittest.TestCase):
         context.response = _make_streaming_response(original_chunks)
         processor = ContentLogProcessor()
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
-            with patch("app.processors.claude_ai.content_log_processor.log_request_entry"):
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry"):
+            with patch(
+                "app.processors.claude_ai.content_log_processor.log_request_entry"
+            ):
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ):
                     asyncio.run(processor.process(context))
 
                     async def consume():
@@ -441,10 +517,16 @@ class TestResponseDataUnmodified(unittest.TestCase):
         context.response = _make_json_response()
         processor = ContentLogProcessor()
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
-            with patch("app.processors.claude_ai.content_log_processor.log_request_entry"):
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry"):
+            with patch(
+                "app.processors.claude_ai.content_log_processor.log_request_entry"
+            ):
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ):
                     asyncio.run(processor.process(context))
 
         # original_request must be the same object
@@ -467,16 +549,26 @@ class TestRequestLogProcessorCoexistence(unittest.TestCase):
 
         emit_called = []
 
-        with patch.object(rlp, "_emit_log", side_effect=lambda *a, **kw: emit_called.append(True)):
+        with patch.object(
+            rlp, "_emit_log", side_effect=lambda *a, **kw: emit_called.append(True)
+        ):
             asyncio.run(rlp.process(context))
 
-        with patch("app.processors.claude_ai.content_log_processor.settings") as mock_settings:
+        with patch(
+            "app.processors.claude_ai.content_log_processor.settings"
+        ) as mock_settings:
             mock_settings.content_log_enabled = True
-            with patch("app.processors.claude_ai.content_log_processor.log_request_entry"):
-                with patch("app.processors.claude_ai.content_log_processor.log_response_entry"):
+            with patch(
+                "app.processors.claude_ai.content_log_processor.log_request_entry"
+            ):
+                with patch(
+                    "app.processors.claude_ai.content_log_processor.log_response_entry"
+                ):
                     asyncio.run(clp.process(context))
 
-        self.assertEqual(len(emit_called), 1, "RequestLogProcessor._emit_log must be called once")
+        self.assertEqual(
+            len(emit_called), 1, "RequestLogProcessor._emit_log must be called once"
+        )
         # Response must still be unchanged
         self.assertIsInstance(context.response, JSONResponse)
 

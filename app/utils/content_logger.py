@@ -3,10 +3,12 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 from loguru import logger
 
 from app.core.config import settings
+from app.core.exceptions import AppError
 
 # Module-level bound logger instance.
 # Set to a bound logger after configure_content_logger() when enabled.
@@ -51,6 +53,7 @@ def configure_content_logger() -> None:
 # Internal formatting helpers
 # ---------------------------------------------------------------------------
 
+
 def _format_body(body: "str | bytes | None") -> str:
     """Decode bytes, pretty-print valid JSON, fall back to raw string."""
     if body is None:
@@ -80,6 +83,7 @@ def _timestamp() -> str:
 # ---------------------------------------------------------------------------
 # Public writing functions
 # ---------------------------------------------------------------------------
+
 
 def log_request_entry(
     direction: str,
@@ -187,3 +191,84 @@ def log_response_entry(
 
     except Exception as exc:
         logger.warning(f"content_logger: failed to write response entry: {exc}")
+
+
+def _extract_error_details(exc: Exception) -> dict:
+    """Extract structured error details from an exception.
+
+    For AppError subclasses: extracts status_code, message_key, and context.copy().
+    For generic exceptions: falls back to type(exc).__name__, str(exc), and None.
+
+    Returns:
+        dict with keys: error_class (str), error_code (int|None),
+                        error_message (str), context (dict|None)
+    """
+    error_class = type(exc).__name__
+
+    if isinstance(exc, AppError):
+        return {
+            "error_class": error_class,
+            "error_code": exc.status_code,
+            "error_message": exc.message_key,
+            "context": exc.context.copy() if exc.context else None,
+        }
+
+    return {
+        "error_class": error_class,
+        "error_code": None,
+        "error_message": str(exc),
+        "context": None,
+    }
+
+
+def log_error_entry(
+    request_id: str,
+    error_class: str,
+    error_code: Optional[int],
+    error_message: str,
+    context: Optional[dict] = None,
+) -> None:
+    """Format and write an error log entry for failed requests.
+
+    No-op if content logging is disabled (content_log is None).
+
+    Parameters:
+        request_id: Correlation identifier for the request
+        error_class: Exception class name (e.g., "NoAccountsAvailableError")
+        error_code: HTTP status code or error code (e.g., 503, 429)
+        error_message: Human-readable error description
+        context: Optional additional context (e.g., account_id, model)
+    """
+    if content_log is None:
+        return
+
+    try:
+        ts = _timestamp()
+
+        parts = [
+            _OUTER_SEP,
+            f"[{ts}] [{request_id}] !!! ERROR",
+            _INNER_SEP,
+            f"Exception: {error_class}",
+        ]
+
+        if error_code is not None:
+            parts.append(f"Status Code: {error_code}")
+
+        parts.append(f"Message: {error_message}")
+        parts.append("")
+        parts.append("Context:")
+
+        if context:
+            for key, value in context.items():
+                parts.append(f"  {key}: {value}")
+        else:
+            parts.append("  (none)")
+
+        parts.append(_OUTER_SEP)
+
+        entry = "\n".join(parts)
+        content_log.info(entry)
+
+    except Exception as exc:
+        logger.warning(f"content_logger: failed to write error entry: {exc}")

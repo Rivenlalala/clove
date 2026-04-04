@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, HttpUrl, field_validator
 from dotenv import load_dotenv
 
+
 class Settings(BaseSettings):
     """Application settings with environment variable and JSON config support."""
 

@@ -38,18 +38,24 @@ class ContentLogProcessor(BaseProcessor):
         if not settings.content_log_enabled:
             return context
 
-        request_id = uuid4().hex[:8]
-        context.metadata["content_request_id"] = request_id
+        # Use pre-assigned request_id from route handler, or generate one (backward compat)
+        request_id = context.metadata.get("content_request_id")
+        if request_id is None:
+            request_id = uuid4().hex[:8]
+            context.metadata["content_request_id"] = request_id
 
         try:
             await self._log_inbound_request(context, request_id)
+            context.metadata["content_inbound_logged"] = True
         except Exception as exc:
             logger.warning(f"ContentLogProcessor: failed to log inbound request: {exc}")
 
         try:
             self._log_outbound_request(context, request_id)
         except Exception as exc:
-            logger.warning(f"ContentLogProcessor: failed to log outbound request: {exc}")
+            logger.warning(
+                f"ContentLogProcessor: failed to log outbound request: {exc}"
+            )
 
         # Log response
         if context.response is None:
@@ -59,7 +65,9 @@ class ContentLogProcessor(BaseProcessor):
             try:
                 self._log_response(context, request_id)
             except Exception as exc:
-                logger.warning(f"ContentLogProcessor: failed to log JSON response: {exc}")
+                logger.warning(
+                    f"ContentLogProcessor: failed to log JSON response: {exc}"
+                )
 
         elif isinstance(context.response, StreamingResponse):
             context.response.body_iterator = self._wrap_stream(
@@ -90,9 +98,7 @@ class ContentLogProcessor(BaseProcessor):
         status_line = f"{method} {path}"
         log_request_entry(_INBOUND, request_id, status_line, headers, body)
 
-    def _log_outbound_request(
-        self, context: ClaudeAIContext, request_id: str
-    ) -> None:
+    def _log_outbound_request(self, context: ClaudeAIContext, request_id: str) -> None:
         """Log the outbound request to Anthropic. Skips gracefully if metadata is absent."""
         outbound = context.metadata.get("outbound_request")
         if outbound is None:
@@ -118,7 +124,9 @@ class ContentLogProcessor(BaseProcessor):
             inbound_headers = {}
 
         # Outbound (Anthropic → Clove) headers stashed in metadata; OAuth path uses same headers
-        outbound_headers = context.metadata.get("outbound_response_headers", inbound_headers)
+        outbound_headers = context.metadata.get(
+            "outbound_response_headers", inbound_headers
+        )
 
         try:
             status_line = str(response.status_code)
@@ -128,11 +136,17 @@ class ContentLogProcessor(BaseProcessor):
         if body is None and isinstance(response, JSONResponse):
             try:
                 body_bytes = response.body
-                body = body_bytes.decode("utf-8", errors="replace") if isinstance(body_bytes, bytes) else str(body_bytes)
+                body = (
+                    body_bytes.decode("utf-8", errors="replace")
+                    if isinstance(body_bytes, bytes)
+                    else str(body_bytes)
+                )
             except Exception:
                 body = None
 
-        log_response_entry(request_id, status_line, outbound_headers, inbound_headers, body)
+        log_response_entry(
+            request_id, status_line, outbound_headers, inbound_headers, body
+        )
 
     async def _wrap_stream(
         self,
@@ -157,13 +171,17 @@ class ContentLogProcessor(BaseProcessor):
             try:
                 self._log_response(context, request_id, body="".join(text_parts))
             except Exception as exc:
-                logger.warning(f"ContentLogProcessor: failed to log streaming response on error: {exc}")
+                logger.warning(
+                    f"ContentLogProcessor: failed to log streaming response on error: {exc}"
+                )
             raise
         else:
             try:
                 self._log_response(context, request_id, body="".join(text_parts))
             except Exception as exc:
-                logger.warning(f"ContentLogProcessor: failed to log streaming response: {exc}")
+                logger.warning(
+                    f"ContentLogProcessor: failed to log streaming response: {exc}"
+                )
 
     def _extract_text_delta(self, chunk: str | bytes) -> str:
         """Parse an SSE chunk and return concatenated text from text_delta events."""
@@ -187,7 +205,7 @@ class ContentLogProcessor(BaseProcessor):
             data_line = None
             for line in event_block.split("\n"):
                 if line.startswith("data: "):
-                    data_line = line[len("data: "):]
+                    data_line = line[len("data: ") :]
                     break
             if data_line is None:
                 continue

@@ -4,7 +4,6 @@ Task 1: Add content logging configuration fields to the application settings.
 Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 5.1, 5.2, 5.3, 5.4
 """
 
-import json
 import os
 import tempfile
 import unittest
@@ -20,7 +19,6 @@ class TestContentLogSettingsDefaults(unittest.TestCase):
 
         Bypasses the module-level singleton by re-importing with a clean env.
         """
-        import importlib
         import app.core.config as config_module
 
         env = {k: v for k, v in os.environ.items()}
@@ -29,7 +27,9 @@ class TestContentLogSettingsDefaults(unittest.TestCase):
 
         # Suppress .env and config.json loading to get clean defaults
         with patch.dict(os.environ, env, clear=True):
-            with patch.object(config_module.Settings, "_json_config_settings", return_value={}):
+            with patch.object(
+                config_module.Settings, "_json_config_settings", return_value={}
+            ):
                 return config_module.Settings()
 
     def test_content_log_enabled_defaults_false(self):
@@ -66,7 +66,9 @@ class TestContentLogSettingsFromEnvVars(unittest.TestCase):
         import app.core.config as config_module
 
         with patch.dict(os.environ, env_overrides, clear=True):
-            with patch.object(config_module.Settings, "_json_config_settings", return_value={}):
+            with patch.object(
+                config_module.Settings, "_json_config_settings", return_value={}
+            ):
                 return config_module.Settings()
 
     def test_content_log_enabled_from_env_true(self):
@@ -116,8 +118,12 @@ class TestContentLogSettingsFromDotEnv(unittest.TestCase):
                 )
 
             with patch.dict(os.environ, {}, clear=True):
-                with patch.object(config_module.Settings, "_json_config_settings", return_value={}):
-                    with patch.object(TempSettings, "_json_config_settings", return_value={}):
+                with patch.object(
+                    config_module.Settings, "_json_config_settings", return_value={}
+                ):
+                    with patch.object(
+                        TempSettings, "_json_config_settings", return_value={}
+                    ):
                         s = TempSettings()
 
             self.assertTrue(s.content_log_enabled)
@@ -142,7 +148,9 @@ class TestContentLogSettingsFromDotEnv(unittest.TestCase):
                 )
 
             with patch.dict(os.environ, {}, clear=True):
-                with patch.object(TempSettings, "_json_config_settings", return_value={}):
+                with patch.object(
+                    TempSettings, "_json_config_settings", return_value={}
+                ):
                     s = TempSettings()
 
             self.assertEqual(s.content_log_file_path, "/var/log/content.log")
@@ -185,7 +193,9 @@ class TestContentLogSettingsFromJsonConfig(unittest.TestCase):
         """config.json has higher priority than environment variables (mirrors app log fields)."""
         import app.core.config as config_module
 
-        with patch.dict(os.environ, {"CONTENT_LOG_FILE_PATH": "from_env.log"}, clear=True):
+        with patch.dict(
+            os.environ, {"CONTENT_LOG_FILE_PATH": "from_env.log"}, clear=True
+        ):
             with patch.object(
                 config_module.Settings,
                 "_json_config_settings",
@@ -203,7 +213,9 @@ class TestContentLogFieldNamingConvention(unittest.TestCase):
         import app.core.config as config_module
 
         with patch.dict(os.environ, {}, clear=True):
-            with patch.object(config_module.Settings, "_json_config_settings", return_value={}):
+            with patch.object(
+                config_module.Settings, "_json_config_settings", return_value={}
+            ):
                 self.settings = config_module.Settings()
 
     def test_all_content_log_fields_present(self):

@@ -6,16 +6,16 @@ Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 3.1-3.7, 7.3, 7.4
 """
 
 import os
-import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _make_settings(
     enabled=True,
@@ -38,12 +38,14 @@ def _make_settings(
 # Task 2.1: Sink setup and module-level logger instance
 # ---------------------------------------------------------------------------
 
+
 class TestConfigureContentLoggerEnabled(unittest.TestCase):
     """Verify sink is added when content_log_enabled is True."""
 
     def setUp(self):
         # Reset module state before each test
         import app.utils.content_logger as mod
+
         mod.content_log = None
 
     def test_sink_added_when_enabled(self):
@@ -132,7 +134,9 @@ class TestConfigureContentLoggerEnabled(unittest.TestCase):
         """The sink must use rotation from settings."""
         import app.utils.content_logger as mod
 
-        settings = _make_settings(enabled=True, file_path="/tmp/cl_test_rot.log", rotation="100 MB")
+        settings = _make_settings(
+            enabled=True, file_path="/tmp/cl_test_rot.log", rotation="100 MB"
+        )
         with patch("app.utils.content_logger.settings", settings):
             with patch("app.utils.content_logger.logger") as mock_logger:
                 mock_logger.bind.return_value = MagicMock()
@@ -144,7 +148,9 @@ class TestConfigureContentLoggerEnabled(unittest.TestCase):
         """The sink must use retention from settings."""
         import app.utils.content_logger as mod
 
-        settings = _make_settings(enabled=True, file_path="/tmp/cl_test_ret.log", retention="14 days")
+        settings = _make_settings(
+            enabled=True, file_path="/tmp/cl_test_ret.log", retention="14 days"
+        )
         with patch("app.utils.content_logger.settings", settings):
             with patch("app.utils.content_logger.logger") as mock_logger:
                 mock_logger.bind.return_value = MagicMock()
@@ -156,7 +162,9 @@ class TestConfigureContentLoggerEnabled(unittest.TestCase):
         """The sink must use compression from settings."""
         import app.utils.content_logger as mod
 
-        settings = _make_settings(enabled=True, file_path="/tmp/cl_test_comp.log", compression="gz")
+        settings = _make_settings(
+            enabled=True, file_path="/tmp/cl_test_comp.log", compression="gz"
+        )
         with patch("app.utils.content_logger.settings", settings):
             with patch("app.utils.content_logger.logger") as mock_logger:
                 mock_logger.bind.return_value = MagicMock()
@@ -183,11 +191,13 @@ class TestConfigureContentLoggerEnabled(unittest.TestCase):
 # Task 2.2: Log entry formatting and writing
 # ---------------------------------------------------------------------------
 
+
 class TestLogRequestEntry(unittest.TestCase):
     """Verify log_request_entry format and behaviour."""
 
     def setUp(self):
         import app.utils.content_logger as mod
+
         mod.content_log = None
 
     def _enable_content_log(self, mod):
@@ -199,14 +209,18 @@ class TestLogRequestEntry(unittest.TestCase):
     def test_noop_when_disabled(self):
         """log_request_entry must be a no-op when content_log is None."""
         import app.utils.content_logger as mod
+
         mod.content_log = None
 
         # Must not raise
-        mod.log_request_entry(">>> INBOUND REQUEST", "req-abc", "POST /v1/messages", {}, None)
+        mod.log_request_entry(
+            ">>> INBOUND REQUEST", "req-abc", "POST /v1/messages", {}, None
+        )
 
     def test_calls_content_log_info_when_enabled(self):
         """log_request_entry must call content_log.info() when enabled."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_request_entry(
@@ -221,6 +235,7 @@ class TestLogRequestEntry(unittest.TestCase):
     def test_entry_contains_direction_marker(self):
         """Log entry must contain the direction marker."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_request_entry(
@@ -236,24 +251,31 @@ class TestLogRequestEntry(unittest.TestCase):
     def test_entry_contains_request_id(self):
         """Log entry must contain the request identifier."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
-        mod.log_request_entry(">>> OUTBOUND REQUEST", "req-xyz789", "POST /api", {}, None)
+        mod.log_request_entry(
+            ">>> OUTBOUND REQUEST", "req-xyz789", "POST /api", {}, None
+        )
         entry = mock_logger.info.call_args[0][0]
         self.assertIn("req-xyz789", entry)
 
     def test_entry_contains_status_line(self):
         """Log entry must contain the status/request line."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
-        mod.log_request_entry(">>> INBOUND REQUEST", "req-1", "POST /v1/messages HTTP/1.1", {}, None)
+        mod.log_request_entry(
+            ">>> INBOUND REQUEST", "req-1", "POST /v1/messages HTTP/1.1", {}, None
+        )
         entry = mock_logger.info.call_args[0][0]
         self.assertIn("POST /v1/messages HTTP/1.1", entry)
 
     def test_entry_headers_formatted_as_key_value(self):
         """Headers must be formatted as key: value on separate lines."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_request_entry(
@@ -270,10 +292,13 @@ class TestLogRequestEntry(unittest.TestCase):
     def test_entry_body_pretty_printed_for_valid_json(self):
         """Valid JSON bodies must be pretty-printed with indentation."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         body = '{"model": "claude-3", "messages": [{"role": "user", "content": "Hi"}]}'
-        mod.log_request_entry(">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, body)
+        mod.log_request_entry(
+            ">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, body
+        )
         entry = mock_logger.info.call_args[0][0]
         # Pretty-printed JSON has newlines and indentation
         self.assertIn('"model": "claude-3"', entry)
@@ -283,21 +308,27 @@ class TestLogRequestEntry(unittest.TestCase):
     def test_entry_body_raw_for_non_json(self):
         """Non-JSON bodies must be included as raw text."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         body = "not valid json at all"
-        mod.log_request_entry(">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, body)
+        mod.log_request_entry(
+            ">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, body
+        )
         entry = mock_logger.info.call_args[0][0]
         self.assertIn("not valid json at all", entry)
 
     def test_entry_bytes_body_decoded_with_replacement(self):
         """Bytes bodies must be decoded with errors='replace'."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         # Include invalid UTF-8 bytes
         body = b"hello \xff\xfe world"
-        mod.log_request_entry(">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, body)
+        mod.log_request_entry(
+            ">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, body
+        )
         entry = mock_logger.info.call_args[0][0]
         # Must not raise and must contain "hello"
         self.assertIn("hello", entry)
@@ -305,9 +336,12 @@ class TestLogRequestEntry(unittest.TestCase):
     def test_entry_has_delimiter_lines(self):
         """Log entry must have delimiter lines of '=' characters."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
-        mod.log_request_entry(">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, None)
+        mod.log_request_entry(
+            ">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, None
+        )
         entry = mock_logger.info.call_args[0][0]
         # Must contain at least one row of '=' chars as delimiter
         self.assertIn("=" * 40, entry)
@@ -322,16 +356,21 @@ class TestLogRequestEntry(unittest.TestCase):
 
         with patch("app.utils.content_logger.logger") as mock_main_logger:
             # Must not raise
-            mod.log_request_entry(">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, None)
+            mod.log_request_entry(
+                ">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, None
+            )
             mock_main_logger.warning.assert_called_once()
 
     def test_entry_contains_no_body_section_when_body_none(self):
         """When body is None, the entry is still written but body section is empty/absent."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         # Should not raise; entry written with empty body
-        mod.log_request_entry(">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, None)
+        mod.log_request_entry(
+            ">>> INBOUND REQUEST", "req-1", "POST /v1/messages", {}, None
+        )
         mock_logger.info.assert_called_once()
 
 
@@ -340,6 +379,7 @@ class TestLogResponseEntry(unittest.TestCase):
 
     def setUp(self):
         import app.utils.content_logger as mod
+
         mod.content_log = None
 
     def _enable_content_log(self, mod):
@@ -350,6 +390,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_noop_when_disabled(self):
         """log_response_entry must be a no-op when content_log is None."""
         import app.utils.content_logger as mod
+
         mod.content_log = None
 
         mod.log_response_entry("req-abc", "200 OK", {}, {}, None)
@@ -357,6 +398,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_calls_content_log_info_when_enabled(self):
         """log_response_entry must call content_log.info() when enabled."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_response_entry("req-abc", "200 OK", {}, {}, "Hello world")
@@ -365,6 +407,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_entry_contains_response_direction_marker(self):
         """Response log entry must contain '<<< RESPONSE' marker."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_response_entry("req-abc", "200 OK", {}, {}, "body text")
@@ -374,6 +417,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_entry_contains_request_id(self):
         """Response log entry must contain the request identifier."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_response_entry("req-xyz789", "200 OK", {}, {}, None)
@@ -383,6 +427,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_entry_contains_status_line(self):
         """Response log entry must contain the status line."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_response_entry("req-1", "200 OK", {}, {}, None)
@@ -392,6 +437,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_entry_contains_outbound_headers_section(self):
         """Response entry must include outbound response headers section."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         outbound = {"content-type": "text/event-stream", "x-request-id": "req_abc"}
@@ -404,6 +450,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_entry_contains_inbound_headers_section(self):
         """Response entry must include inbound response headers section."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         inbound = {"transfer-encoding": "chunked", "content-type": "text/event-stream"}
@@ -415,6 +462,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_entry_contains_body_section(self):
         """Response entry must include a body section."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_response_entry("req-1", "200 OK", {}, {}, "Hello world")
@@ -425,6 +473,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_entry_has_delimiter_lines(self):
         """Response log entry must have delimiter lines."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         mod.log_response_entry("req-1", "200 OK", {}, {}, None)
@@ -446,6 +495,7 @@ class TestLogResponseEntry(unittest.TestCase):
     def test_both_outbound_and_inbound_headers_in_single_entry(self):
         """Both header sections must appear in a single response log entry."""
         import app.utils.content_logger as mod
+
         mock_logger = self._enable_content_log(mod)
 
         outbound = {"x-anthropic-id": "abc"}
@@ -460,6 +510,7 @@ class TestLogResponseEntry(unittest.TestCase):
 # Task 2.3: Wiring into configure_logger()
 # ---------------------------------------------------------------------------
 
+
 class TestConfigureLoggerCallsContentLogger(unittest.TestCase):
     """Verify configure_logger() calls configure_content_logger()."""
 
@@ -468,7 +519,9 @@ class TestConfigureLoggerCallsContentLogger(unittest.TestCase):
         import app.utils.logger as logger_mod
         import app.utils.content_logger as content_logger_mod
 
-        with patch.object(content_logger_mod, "configure_content_logger") as mock_configure:
+        with patch.object(
+            content_logger_mod, "configure_content_logger"
+        ) as mock_configure:
             with patch("app.utils.logger.logger"):
                 with patch("app.utils.logger.settings") as mock_settings:
                     mock_settings.log_level = "INFO"
@@ -490,7 +543,9 @@ class TestConfigureLoggerCallsContentLogger(unittest.TestCase):
         def track_content(*args, **kwargs):
             call_order.append("configure_content_logger")
 
-        with patch.object(content_logger_mod, "configure_content_logger", side_effect=track_content):
+        with patch.object(
+            content_logger_mod, "configure_content_logger", side_effect=track_content
+        ):
             with patch("app.utils.logger.logger") as mock_logger:
                 mock_logger.add.side_effect = track_add
                 mock_logger.remove = MagicMock()
@@ -506,6 +561,189 @@ class TestConfigureLoggerCallsContentLogger(unittest.TestCase):
             call_order.index("configure_content_logger"),
             call_order.index("logger.add"),
         )
+
+
+class TestLogErrorEntry(unittest.TestCase):
+    """Verify log_error_entry format and behaviour."""
+
+    def setUp(self):
+        import app.utils.content_logger as mod
+
+        mod.content_log = None
+
+    def _enable_content_log(self, mod):
+        mock_logger = MagicMock()
+        mod.content_log = mock_logger
+        return mock_logger
+
+    def test_noop_when_disabled(self):
+        """log_error_entry must be a no-op when content_log is None."""
+        import app.utils.content_logger as mod
+
+        mod.content_log = None
+
+        mod.log_error_entry("req-abc", "TestError", 500, "test error")
+
+    def test_calls_content_log_info_when_enabled(self):
+        """log_error_entry must call content_log.info() when enabled."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-abc", "TestError", 500, "test error")
+        mock_logger.info.assert_called_once()
+
+    def test_entry_contains_error_marker(self):
+        """Log entry must contain '!!! ERROR' marker."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-abc", "TestError", 500, "test error")
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("!!! ERROR", entry)
+
+    def test_entry_contains_request_id(self):
+        """Log entry must contain the request identifier."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-xyz789", "TestError", 500, "test error")
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("req-xyz789", entry)
+
+    def test_entry_contains_exception_class(self):
+        """Log entry must contain the exception class name."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-1", "NoAccountsAvailableError", 503, "no accounts")
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("NoAccountsAvailableError", entry)
+
+    def test_entry_contains_status_code(self):
+        """Log entry must contain the status code."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-1", "TestError", 429, "rate limited")
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("429", entry)
+
+    def test_entry_contains_error_message(self):
+        """Log entry must contain the error message."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-1", "TestError", 500, "something went wrong")
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("something went wrong", entry)
+
+    def test_entry_contains_context_when_provided(self):
+        """Log entry must include context when provided."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry(
+            "req-1",
+            "TestError",
+            429,
+            "rate limited",
+            {"resets_at": "2026-04-03T13:00:00Z"},
+        )
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("resets_at", entry)
+        self.assertIn("2026-04-03T13:00:00Z", entry)
+
+    def test_entry_shows_none_when_no_context(self):
+        """Log entry must show '(none)' when context is None."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-1", "TestError", 500, "error", None)
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("(none)", entry)
+
+    def test_entry_has_delimiter_lines(self):
+        """Log entry must have delimiter lines."""
+        import app.utils.content_logger as mod
+
+        mock_logger = self._enable_content_log(mod)
+
+        mod.log_error_entry("req-1", "TestError", 500, "error")
+        entry = mock_logger.info.call_args[0][0]
+        self.assertIn("=" * 40, entry)
+
+    def test_write_failure_logs_warning_not_raises(self):
+        """Write failures must log a warning, never raise."""
+        import app.utils.content_logger as mod
+
+        mock_logger = MagicMock()
+        mock_logger.info.side_effect = Exception("disk full")
+        mod.content_log = mock_logger
+
+        with patch("app.utils.content_logger.logger") as mock_main_logger:
+            mod.log_error_entry("req-1", "TestError", 500, "error")
+            mock_main_logger.warning.assert_called_once()
+
+
+class TestExtractErrorDetails(unittest.TestCase):
+    """Verify _extract_error_details() extracts structured fields from exceptions."""
+
+    def test_apperror_subclass_extraction(self):
+        """Must extract status_code, message_key, and context from AppError."""
+        from app.utils.content_logger import _extract_error_details
+        from app.core.exceptions import NoAccountsAvailableError
+
+        exc = NoAccountsAvailableError()
+        result = _extract_error_details(exc)
+
+        self.assertEqual(result["error_class"], "NoAccountsAvailableError")
+        self.assertEqual(result["error_code"], 503)
+        self.assertEqual(result["error_message"], "accountManager.noAccountsAvailable")
+        # AppError initializes context to {} when None is passed
+        self.assertIsInstance(result["context"], (dict, type(None)))
+
+    def test_claude_rate_limited_with_context(self):
+        """Must extract context from ClaudeRateLimitedError."""
+        from datetime import datetime, UTC
+        from app.utils.content_logger import _extract_error_details
+        from app.core.exceptions import ClaudeRateLimitedError
+
+        exc = ClaudeRateLimitedError(
+            resets_at=datetime(2026, 4, 3, 13, 0, 0, tzinfo=UTC)
+        )
+        result = _extract_error_details(exc)
+
+        self.assertEqual(result["error_class"], "ClaudeRateLimitedError")
+        self.assertEqual(result["error_code"], 429)
+        self.assertIn("resets_at", result["context"])
+
+    def test_generic_exception_fallback(self):
+        """Must fall back to type name and str() for non-AppError exceptions."""
+        from app.utils.content_logger import _extract_error_details
+
+        exc = RuntimeError("something broke")
+        result = _extract_error_details(exc)
+
+        self.assertEqual(result["error_class"], "RuntimeError")
+        self.assertIsNone(result["error_code"])
+        self.assertEqual(result["error_message"], "something broke")
+        self.assertIsNone(result["context"])
+
+    def test_none_error_code_for_non_apperror(self):
+        """Non-AppError exceptions must have error_code=None."""
+        from app.utils.content_logger import _extract_error_details
+
+        exc = ValueError("bad value")
+        result = _extract_error_details(exc)
+        self.assertIsNone(result["error_code"])
 
 
 if __name__ == "__main__":

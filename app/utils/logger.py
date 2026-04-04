@@ -30,4 +30,5 @@ def configure_logger():
         )
 
     from app.utils.content_logger import configure_content_logger
+
     configure_content_logger()

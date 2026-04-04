@@ -166,7 +166,9 @@ class OutputConfig(BaseModel):
 class OutputFormat(BaseModel):
     """Output format for structured outputs (deprecated, use output_config.format instead)."""
 
-    model_config = ConfigDict(extra="allow", populate_by_name=True, serialize_by_alias=True)
+    model_config = ConfigDict(
+        extra="allow", populate_by_name=True, serialize_by_alias=True
+    )
     type: Literal["json_schema"]
     schema_: Optional[Dict[str, Any]] = Field(default=None, alias="schema")
 

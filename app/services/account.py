@@ -278,18 +278,18 @@ class AccountManager:
             Account instance if found and valid, None otherwise
         """
         account = self._accounts.get(account_id)
-        
+
         if account and account.status == AccountStatus.VALID:
             logger.debug(f"Retrieved account by ID: {account_id[:8]}...")
             return account
-        
+
         if account:
             logger.debug(
                 f"Account {account_id[:8]}... found but not valid: status={account.status}"
             )
         else:
             logger.debug(f"Account {account_id[:8]}... not found")
-        
+
         return None
 
     async def release_session(self, session_id: str) -> None:

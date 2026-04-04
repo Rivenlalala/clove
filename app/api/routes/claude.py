@@ -6,6 +6,7 @@ from tenacity import (
     stop_after_attempt,
     wait_fixed,
 )
+from uuid import uuid4
 
 from app.core.config import settings
 from app.core.exceptions import NoResponseError
@@ -13,6 +14,7 @@ from app.dependencies.auth import AuthDep
 from app.models.claude import MessagesAPIRequest
 from app.processors.claude_ai import ClaudeAIContext
 from app.processors.claude_ai.pipeline import ClaudeAIPipeline
+from app.utils.content_log_hook import content_log_hook
 from app.utils.retry import is_retryable_error, log_before_sleep
 
 router = APIRouter()
@@ -34,7 +36,17 @@ async def create_message(
         messages_api_request=messages_request,
     )
 
-    context = await ClaudeAIPipeline().process(context)
+    request_id = uuid4().hex[:8]
+    context.metadata["content_request_id"] = request_id
+
+    error: Exception | None = None
+    try:
+        context = await ClaudeAIPipeline().process(context)
+    except Exception as exc:
+        error = exc
+        raise
+    finally:
+        await content_log_hook(context, request_id, error)
 
     if not context.response:
         raise NoResponseError()

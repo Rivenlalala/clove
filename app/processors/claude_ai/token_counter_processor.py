@@ -107,7 +107,9 @@ class TokenCounterProcessor(BaseProcessor):
         try:
             tokens = len(encoder.encode(merged_text, disallowed_special=()))
         except Exception:
-            logger.warning("Tiktoken encoding failed for input, falling back to estimation")
+            logger.warning(
+                "Tiktoken encoding failed for input, falling back to estimation"
+            )
             tokens = len(merged_text) // 4
 
         logger.debug(f"Calculated {tokens} input tokens")
@@ -123,7 +125,9 @@ class TokenCounterProcessor(BaseProcessor):
         try:
             tokens = len(encoder.encode(merged_text, disallowed_special=()))
         except Exception:
-            logger.warning("Tiktoken encoding failed for output, falling back to estimation")
+            logger.warning(
+                "Tiktoken encoding failed for output, falling back to estimation"
+            )
             tokens = len(merged_text) // 4
 
         logger.debug(f"Calculated {tokens} output tokens")

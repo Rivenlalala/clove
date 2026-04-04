@@ -36,11 +36,24 @@ class RequestLogProcessor(BaseProcessor):
         On completion or error: calls _emit_log().
         """
         is_oauth = context.metadata.get("oauth_path", False)
-        oauth_usage = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0} if is_oauth else None
+        oauth_usage = (
+            {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
+            }
+            if is_oauth
+            else None
+        )
         try:
             async for chunk in body_iterator:
                 if is_oauth:
-                    chunk_bytes = chunk if isinstance(chunk, bytes) else chunk.encode("utf-8", errors="replace")
+                    chunk_bytes = (
+                        chunk
+                        if isinstance(chunk, bytes)
+                        else chunk.encode("utf-8", errors="replace")
+                    )
                     self._extract_usage_from_sse(chunk_bytes, oauth_usage)
                 yield chunk
         finally:
@@ -61,7 +74,7 @@ class RequestLogProcessor(BaseProcessor):
                 data_line = None
                 for line in event_block.split("\n"):
                     if line.startswith("data: "):
-                        data_line = line[len("data: "):]
+                        data_line = line[len("data: ") :]
                         break
                 if data_line is None:
                     continue
@@ -72,9 +85,13 @@ class RequestLogProcessor(BaseProcessor):
                     if "input_tokens" in msg_usage:
                         usage["input_tokens"] = msg_usage["input_tokens"]
                     if "cache_read_input_tokens" in msg_usage:
-                        usage["cache_read_input_tokens"] = msg_usage["cache_read_input_tokens"]
+                        usage["cache_read_input_tokens"] = msg_usage[
+                            "cache_read_input_tokens"
+                        ]
                     if "cache_creation_input_tokens" in msg_usage:
-                        usage["cache_creation_input_tokens"] = msg_usage["cache_creation_input_tokens"]
+                        usage["cache_creation_input_tokens"] = msg_usage[
+                            "cache_creation_input_tokens"
+                        ]
                 elif event_type == "message_delta":
                     delta_usage = data.get("usage", {})
                     if "output_tokens" in delta_usage:

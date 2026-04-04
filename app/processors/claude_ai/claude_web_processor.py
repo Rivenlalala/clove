@@ -138,6 +138,8 @@ class ClaudeWebProcessor(BaseProcessor):
                 "headers": {},
                 "body": context.claude_web_request.model_dump_json(exclude_none=True),
             }
+            # Web path headers are managed internally by claude_client and not easily accessible
+            context.metadata["outbound_response_headers"] = {}
 
         context.original_stream = await context.claude_session.send_message(
             request_dict

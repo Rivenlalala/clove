@@ -9,7 +9,9 @@ class MessagesAPIRequestToolParsingTests(unittest.TestCase):
             {
                 "model": "claude-opus-4-20250514",
                 "max_tokens": 1024,
-                "messages": [{"role": "user", "content": "Search for the latest CNY USD rate"}],
+                "messages": [
+                    {"role": "user", "content": "Search for the latest CNY USD rate"}
+                ],
                 "tools": [
                     {
                         "type": "custom",
@@ -36,7 +38,9 @@ class MessagesAPIRequestToolParsingTests(unittest.TestCase):
             {
                 "model": "claude-opus-4-20250514",
                 "max_tokens": 1024,
-                "messages": [{"role": "user", "content": "Search for the latest CNY USD rate"}],
+                "messages": [
+                    {"role": "user", "content": "Search for the latest CNY USD rate"}
+                ],
                 "tools": [
                     {
                         "type": "web_search_20250305",
