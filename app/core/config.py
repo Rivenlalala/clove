@@ -292,8 +292,26 @@ class Settings(BaseSettings):
         description="Comma-separated list of models that require max plan accounts",
     )
 
+    # Header manipulation
+    strip_headers: List[str] | str = Field(
+        default_factory=list,
+        env="STRIP_HEADERS",
+        description="List of 'key:value' header strings to strip from inbound requests. "
+        "For comma-separated headers like anthropic-beta, only the matching value is removed.",
+    )
+    add_headers: Dict[str, str] = Field(
+        default_factory=dict,
+        env="ADD_HEADERS",
+        description="Key-value pairs of headers to add to all outbound OAuth requests.",
+    )
+
     @field_validator(
-        "api_keys", "admin_api_keys", "cookies", "max_models", "pad_tokens"
+        "api_keys",
+        "admin_api_keys",
+        "cookies",
+        "max_models",
+        "pad_tokens",
+        "strip_headers",
     )
     def parse_comma_separated(cls, v: str | List[str]) -> List[str]:
         """Parse comma-separated string."""

@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List
+from typing import List, Dict
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, HttpUrl
 
@@ -33,6 +33,9 @@ class SettingsRead(BaseModel):
     oauth_token_url: str
     oauth_redirect_uri: str
 
+    strip_headers: List[str]
+    add_headers: Dict[str, str]
+
 
 class SettingsUpdate(BaseModel):
     """Model for updating settings."""
@@ -58,6 +61,9 @@ class SettingsUpdate(BaseModel):
     oauth_authorize_url: str | None = None
     oauth_token_url: str | None = None
     oauth_redirect_uri: str | None = None
+
+    strip_headers: List[str] | None = None
+    add_headers: Dict[str, str] | None = None
 
 
 router = APIRouter()
