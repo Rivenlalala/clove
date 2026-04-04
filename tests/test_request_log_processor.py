@@ -154,8 +154,8 @@ class TestEmitLogFormat(unittest.TestCase):
             self.processor._emit_log(context, oauth_usage=oauth_usage)
 
         pairs = dict(pair.split("=", 1) for pair in mock_logger.info.call_args[0][0].split(" "))
-        self.assertEqual(pairs["cache_read"], "true")
-        self.assertEqual(pairs["cache_write"], "false")
+        self.assertEqual(pairs["cache_read"], "80")
+        self.assertEqual(pairs["cache_write"], "0")
 
     def test_emit_log_oauth_cache_write_from_sse_usage(self):
         context = _make_context()
@@ -165,8 +165,8 @@ class TestEmitLogFormat(unittest.TestCase):
             self.processor._emit_log(context, oauth_usage=oauth_usage)
 
         pairs = dict(pair.split("=", 1) for pair in mock_logger.info.call_args[0][0].split(" "))
-        self.assertEqual(pairs["cache_read"], "false")
-        self.assertEqual(pairs["cache_write"], "true")
+        self.assertEqual(pairs["cache_read"], "0")
+        self.assertEqual(pairs["cache_write"], "200")
 
     def test_emit_log_oauth_no_cache_defaults_false(self):
         context = _make_context()
@@ -176,8 +176,8 @@ class TestEmitLogFormat(unittest.TestCase):
             self.processor._emit_log(context, oauth_usage=oauth_usage)
 
         pairs = dict(pair.split("=", 1) for pair in mock_logger.info.call_args[0][0].split(" "))
-        self.assertEqual(pairs["cache_read"], "false")
-        self.assertEqual(pairs["cache_write"], "false")
+        self.assertEqual(pairs["cache_read"], "0")
+        self.assertEqual(pairs["cache_write"], "0")
 
     def test_emit_log_oauth_usage_overrides_collected_message(self):
         context = _make_context(

@@ -182,6 +182,33 @@ class Settings(BaseSettings):
         description="Log file compression format",
     )
 
+    # Content logging
+    content_log_enabled: bool = Field(
+        default=False,
+        env="CONTENT_LOG_ENABLED",
+        description="Enable logging of request/response content to a separate file",
+    )
+    content_log_file_path: str = Field(
+        default="logs/content.log",
+        env="CONTENT_LOG_FILE_PATH",
+        description="Content log file path",
+    )
+    content_log_file_rotation: str = Field(
+        default="50 MB",
+        env="CONTENT_LOG_FILE_ROTATION",
+        description="Content log file rotation (e.g., '50 MB', '1 day')",
+    )
+    content_log_file_retention: str = Field(
+        default="7 days",
+        env="CONTENT_LOG_FILE_RETENTION",
+        description="Content log file retention (e.g., '7 days', '1 month')",
+    )
+    content_log_file_compression: str = Field(
+        default="zip",
+        env="CONTENT_LOG_FILE_COMPRESSION",
+        description="Content log file compression format",
+    )
+
     # Session management settings
     session_timeout: int = Field(
         default=300,

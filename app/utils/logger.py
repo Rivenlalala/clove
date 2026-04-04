@@ -28,3 +28,6 @@ def configure_logger():
             enqueue=True,
             encoding="utf-8",
         )
+
+    from app.utils.content_logger import configure_content_logger
+    configure_content_logger()
