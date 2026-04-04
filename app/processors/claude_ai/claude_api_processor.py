@@ -97,6 +97,15 @@ class ClaudeAPIProcessor(BaseProcessor):
                     context.original_request,
                 )
 
+                # Stash outbound request info for content logging
+                if settings.content_log_enabled:
+                    context.metadata["outbound_request"] = {
+                        "method": "POST",
+                        "url": self.messages_api_url,
+                        "headers": headers,
+                        "body": request_json,
+                    }
+
                 session = create_session(
                     proxy=settings.proxy_url,
                     timeout=settings.request_timeout,

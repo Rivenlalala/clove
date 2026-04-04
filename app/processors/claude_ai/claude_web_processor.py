@@ -129,6 +129,16 @@ class ClaudeWebProcessor(BaseProcessor):
         )
 
         request_dict = context.claude_web_request.model_dump(exclude_none=True)
+
+        # Stash outbound request info for content logging
+        if settings.content_log_enabled:
+            context.metadata["outbound_request"] = {
+                "method": "POST",
+                "url": context.claude_session.completion_url,
+                "headers": {},
+                "body": context.claude_web_request.model_dump_json(exclude_none=True),
+            }
+
         context.original_stream = await context.claude_session.send_message(
             request_dict
         )

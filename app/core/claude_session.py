@@ -64,6 +64,14 @@ class ClaudeWebSession:
         """Update last activity timestamp."""
         self.last_activity = datetime.now()
 
+    @property
+    def completion_url(self) -> str:
+        return (
+            f"{self.client.endpoint}"
+            f"/api/organizations/{self.client.account.organization_uuid}"
+            f"/chat_conversations/{self.conv_uuid}/completion"
+        )
+
     async def send_message(self, payload: Dict[str, Any]) -> AsyncIterator[str]:
         """Process a completion request through the pipeline."""
         self.update_activity()
