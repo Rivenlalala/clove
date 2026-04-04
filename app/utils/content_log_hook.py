@@ -110,7 +110,14 @@ async def _log_inbound_from_context(
         body = None
 
     status_line = f"{method} {path}"
-    log_request_entry(_INBOUND, request_id, status_line, headers, body)
+    log_request_entry(
+        _INBOUND,
+        request_id,
+        status_line,
+        headers,
+        body,
+        include_body=settings.content_log_include_body,
+    )
 
 
 def _log_outbound_from_context(
@@ -131,4 +138,11 @@ def _log_outbound_from_context(
     body = outbound.get("body")
 
     status_line = f"{method} {url}"
-    log_request_entry(_OUTBOUND, request_id, status_line, headers, body)
+    log_request_entry(
+        _OUTBOUND,
+        request_id,
+        status_line,
+        headers,
+        body,
+        include_body=settings.content_log_include_body,
+    )

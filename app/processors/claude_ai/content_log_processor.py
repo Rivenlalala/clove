@@ -96,7 +96,14 @@ class ContentLogProcessor(BaseProcessor):
             body = None
 
         status_line = f"{method} {path}"
-        log_request_entry(_INBOUND, request_id, status_line, headers, body)
+        log_request_entry(
+            _INBOUND,
+            request_id,
+            status_line,
+            headers,
+            body,
+            include_body=settings.content_log_include_body,
+        )
 
     def _log_outbound_request(self, context: ClaudeAIContext, request_id: str) -> None:
         """Log the outbound request to Anthropic. Skips gracefully if metadata is absent."""
@@ -110,7 +117,14 @@ class ContentLogProcessor(BaseProcessor):
         body = outbound.get("body")
 
         status_line = f"{method} {url}"
-        log_request_entry(_OUTBOUND, request_id, status_line, headers, body)
+        log_request_entry(
+            _OUTBOUND,
+            request_id,
+            status_line,
+            headers,
+            body,
+            include_body=settings.content_log_include_body,
+        )
 
     def _log_response(
         self, context: ClaudeAIContext, request_id: str, body: str | None = None
@@ -145,7 +159,12 @@ class ContentLogProcessor(BaseProcessor):
                 body = None
 
         log_response_entry(
-            request_id, status_line, outbound_headers, inbound_headers, body
+            request_id,
+            status_line,
+            outbound_headers,
+            inbound_headers,
+            body,
+            include_body=settings.content_log_include_body,
         )
 
     async def _wrap_stream(

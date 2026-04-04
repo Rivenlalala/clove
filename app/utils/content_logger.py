@@ -91,6 +91,7 @@ def log_request_entry(
     status_line: str,
     headers: dict,
     body: "str | bytes | None",
+    include_body: bool = True,
 ) -> None:
     """Format and write a request log entry (inbound or outbound request).
 
@@ -102,6 +103,7 @@ def log_request_entry(
         status_line: First line (e.g., "POST /v1/messages HTTP/1.1")
         headers: HTTP headers as key-value pairs
         body: Raw body content (str or bytes); pretty-printed if valid JSON
+        include_body: When False, only headers are logged (body omitted)
     """
     if content_log is None:
         return
@@ -109,7 +111,7 @@ def log_request_entry(
     try:
         ts = _timestamp()
         formatted_headers = _format_headers(headers)
-        formatted_body = _format_body(body)
+        formatted_body = _format_body(body) if include_body else ""
 
         parts = [
             _OUTER_SEP,
@@ -121,10 +123,11 @@ def log_request_entry(
         if formatted_headers:
             parts.append(formatted_headers)
 
-        parts.append("")  # blank line before body
+        if include_body:
+            parts.append("")  # blank line before body
 
-        if formatted_body:
-            parts.append(formatted_body)
+            if formatted_body:
+                parts.append(formatted_body)
 
         parts.append(_OUTER_SEP)
 
@@ -141,6 +144,7 @@ def log_response_entry(
     outbound_headers: dict,
     inbound_headers: dict,
     body: str | None,
+    include_body: bool = True,
 ) -> None:
     """Format and write the response log entry with both sets of headers.
 
@@ -152,6 +156,7 @@ def log_response_entry(
         outbound_headers: Response headers from Anthropic
         inbound_headers: Response headers sent to client
         body: Response body text (extracted text for streaming, full body for non-streaming)
+        include_body: When False, only headers are logged (body omitted)
     """
     if content_log is None:
         return
@@ -177,11 +182,12 @@ def log_response_entry(
         if inbound_headers:
             parts.append(_format_headers(inbound_headers))
 
-        parts.append("")
-        parts.append("--- Body ---")
+        if include_body:
+            parts.append("")
+            parts.append("--- Body ---")
 
-        if body:
-            parts.append(body)
+            if body:
+                parts.append(body)
 
         parts.append("")
         parts.append(_OUTER_SEP)

@@ -1062,7 +1062,7 @@ class TestConcurrentStreamBufferIsolation(unittest.TestCase):
         logged_bodies = {}
 
         def capture_response(
-            request_id, status_line, outbound_hdrs, inbound_hdrs, body
+            request_id, status_line, outbound_hdrs, inbound_hdrs, body, **kwargs
         ):
             logged_bodies[request_id] = body
 
@@ -1070,6 +1070,7 @@ class TestConcurrentStreamBufferIsolation(unittest.TestCase):
             "app.processors.claude_ai.content_log_processor.settings"
         ) as mock_settings:
             mock_settings.content_log_enabled = True
+            mock_settings.content_log_include_body = True
             with patch(
                 "app.processors.claude_ai.content_log_processor.log_request_entry"
             ):
@@ -1119,7 +1120,7 @@ class TestStreamingErrorHandling(unittest.TestCase):
         logged_body = None
 
         def capture_response(
-            request_id, status_line, outbound_hdrs, inbound_hdrs, body
+            request_id, status_line, outbound_hdrs, inbound_hdrs, body, **kwargs
         ):
             nonlocal logged_body
             logged_body = body
@@ -1128,6 +1129,7 @@ class TestStreamingErrorHandling(unittest.TestCase):
             "app.processors.claude_ai.content_log_processor.settings"
         ) as mock_settings:
             mock_settings.content_log_enabled = True
+            mock_settings.content_log_include_body = True
             with patch(
                 "app.processors.claude_ai.content_log_processor.log_request_entry"
             ):

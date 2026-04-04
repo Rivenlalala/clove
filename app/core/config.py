@@ -209,6 +209,11 @@ class Settings(BaseSettings):
         env="CONTENT_LOG_FILE_COMPRESSION",
         description="Content log file compression format",
     )
+    content_log_include_body: bool = Field(
+        default=True,
+        env="CONTENT_LOG_INCLUDE_BODY",
+        description="Include request/response body in content logs. When False, only headers are logged",
+    )
 
     # Session management settings
     session_timeout: int = Field(
