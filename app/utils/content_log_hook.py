@@ -17,6 +17,7 @@ from app.utils.content_logger import (
 )
 
 _INBOUND = ">>> INBOUND REQUEST"
+_OUTBOUND = ">>> OUTBOUND REQUEST"
 
 
 async def content_log_hook(
@@ -59,6 +60,8 @@ async def content_log_hook(
         if not already_logged:
             # ContentLogProcessor never completed inbound logging — log it now
             await _log_inbound_from_context(context, request_id)
+            # Also log outbound request if it was stashed before the failure
+            _log_outbound_from_context(context, request_id)
 
         # Log error entry if there's no response or an exception was caught
         if context.response is None or error is not None:
@@ -108,3 +111,24 @@ async def _log_inbound_from_context(
 
     status_line = f"{method} {path}"
     log_request_entry(_INBOUND, request_id, status_line, headers, body)
+
+
+def _log_outbound_from_context(
+    context: ClaudeAIContext,
+    request_id: str,
+) -> None:
+    """Log the outbound request if it was stashed before the failure.
+
+    Reads from context.metadata["outbound_request"] dict.
+    """
+    outbound = context.metadata.get("outbound_request")
+    if outbound is None:
+        return
+
+    method = outbound.get("method", "POST")
+    url = outbound.get("url", "")
+    headers = outbound.get("headers", {})
+    body = outbound.get("body")
+
+    status_line = f"{method} {url}"
+    log_request_entry(_OUTBOUND, request_id, status_line, headers, body)
