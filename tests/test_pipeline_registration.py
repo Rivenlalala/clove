@@ -43,9 +43,9 @@ class TestContentLogProcessorRegistration(unittest.TestCase):
         self.assertEqual(len(content_log_processors), 1)
 
     def test_total_processor_count_includes_content_log(self):
-        """Default pipeline must have 14 processors (13 original + ContentLogProcessor)."""
+        """Default pipeline must have 15 processors (13 original + ContentLogProcessor + HeaderManipulationProcessor)."""
         pipeline = ClaudeAIPipeline()
-        self.assertEqual(len(pipeline.processors), 14)
+        self.assertEqual(len(pipeline.processors), 15)
 
 
 if __name__ == "__main__":
