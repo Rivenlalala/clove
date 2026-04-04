@@ -249,18 +249,23 @@ class TestWebProxyPathConvergence(unittest.TestCase):
         self.assertNotIn("skip_processors", result.metadata)
 
 
-class TestRequestLogProcessorIsLast(unittest.TestCase):
-    """Verify RequestLogProcessor is registered last in the default pipeline."""
+class TestRequestLogProcessorIsSecondToLast(unittest.TestCase):
+    """Verify RequestLogProcessor is second-to-last; ContentLogProcessor is last."""
 
-    def test_request_log_processor_is_last(self):
+    def test_content_log_processor_is_last(self):
         pipeline = ClaudeAIPipeline()
         last_processor = pipeline.processors[-1]
-        self.assertEqual(last_processor.name, "RequestLogProcessor")
+        self.assertEqual(last_processor.name, "ContentLogProcessor")
 
-    def test_non_streaming_response_processor_is_second_to_last(self):
+    def test_request_log_processor_is_second_to_last(self):
         pipeline = ClaudeAIPipeline()
         second_to_last = pipeline.processors[-2]
-        self.assertEqual(second_to_last.name, "NonStreamingResponseProcessor")
+        self.assertEqual(second_to_last.name, "RequestLogProcessor")
+
+    def test_non_streaming_response_processor_is_third_to_last(self):
+        pipeline = ClaudeAIPipeline()
+        third_to_last = pipeline.processors[-3]
+        self.assertEqual(third_to_last.name, "NonStreamingResponseProcessor")
 
 
 if __name__ == "__main__":
