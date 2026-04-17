@@ -10,7 +10,12 @@ from loguru import logger
 from app.processors.base import BaseProcessor
 from app.processors.claude_ai.context import ClaudeAIContext
 from app.core.config import settings
-from app.utils.content_logger import log_request_entry, log_response_entry
+from app.utils.cache_fingerprint import fingerprint_body
+from app.utils.content_logger import (
+    log_fingerprint,
+    log_request_entry,
+    log_response_entry,
+)
 
 _INBOUND = ">>> INBOUND REQUEST"
 _OUTBOUND = ">>> OUTBOUND REQUEST"
@@ -104,6 +109,7 @@ class ContentLogProcessor(BaseProcessor):
             body,
             include_body=settings.content_log_include_body,
         )
+        log_fingerprint(request_id, "INBOUND", fingerprint_body(body))
 
     def _log_outbound_request(self, context: ClaudeAIContext, request_id: str) -> None:
         """Log the outbound request to Anthropic. Skips gracefully if metadata is absent."""
@@ -125,6 +131,7 @@ class ContentLogProcessor(BaseProcessor):
             body,
             include_body=settings.content_log_include_body,
         )
+        log_fingerprint(request_id, "OUTBOUND", fingerprint_body(body))
 
     def _log_response(
         self, context: ClaudeAIContext, request_id: str, body: str | None = None

@@ -10,7 +10,9 @@ from loguru import logger
 
 from app.core.config import settings
 from app.processors.claude_ai.context import ClaudeAIContext
+from app.utils.cache_fingerprint import fingerprint_body
 from app.utils.content_logger import (
+    log_fingerprint,
     log_request_entry,
     log_error_entry,
     _extract_error_details,
@@ -118,6 +120,7 @@ async def _log_inbound_from_context(
         body,
         include_body=settings.content_log_include_body,
     )
+    log_fingerprint(request_id, "INBOUND", fingerprint_body(body))
 
 
 def _log_outbound_from_context(
@@ -146,3 +149,4 @@ def _log_outbound_from_context(
         body,
         include_body=settings.content_log_include_body,
     )
+    log_fingerprint(request_id, "OUTBOUND", fingerprint_body(body))

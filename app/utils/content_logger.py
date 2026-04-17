@@ -85,6 +85,19 @@ def _timestamp() -> str:
 # ---------------------------------------------------------------------------
 
 
+def log_fingerprint(request_id: str, direction: str, fingerprint: "str | None") -> None:
+    """Emit a single [FINGERPRINT] line tagged by request_id and direction.
+
+    direction is a short label like "INBOUND" or "OUTBOUND".
+    """
+    if content_log is None or not fingerprint:
+        return
+    try:
+        content_log.info(f"[{request_id}] {direction} [FINGERPRINT] {fingerprint}")
+    except Exception as exc:
+        logger.warning(f"content_logger: failed to write fingerprint: {exc}")
+
+
 def log_request_entry(
     direction: str,
     request_id: str,
