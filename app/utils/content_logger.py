@@ -85,6 +85,17 @@ def _timestamp() -> str:
 # ---------------------------------------------------------------------------
 
 
+def log_summary(request_id: "str | None", message: str) -> None:
+    """Emit a single [SUMMARY] line (e.g., per-request token/cache/duration stats)."""
+    if content_log is None:
+        return
+    try:
+        prefix = f"[{request_id}] " if request_id else ""
+        content_log.info(f"{prefix}[SUMMARY] {message}")
+    except Exception as exc:
+        logger.warning(f"content_logger: failed to write summary: {exc}")
+
+
 def log_fingerprint(request_id: str, direction: str, fingerprint: "str | None") -> None:
     """Emit a single [FINGERPRINT] line tagged by request_id and direction.
 

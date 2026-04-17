@@ -7,6 +7,7 @@ from loguru import logger
 
 from app.processors.base import BaseProcessor
 from app.processors.claude_ai.context import ClaudeAIContext
+from app.utils.content_logger import log_summary
 
 
 class RequestLogProcessor(BaseProcessor):
@@ -141,8 +142,10 @@ class RequestLogProcessor(BaseProcessor):
         if context.messages_api_request and context.messages_api_request.stream:
             stream = "true"
 
-        logger.info(
+        summary = (
             f"model={model} input_tokens={input_tokens} output_tokens={output_tokens} "
             f"cache_read={cache_read} cache_write={cache_write} "
             f"duration={duration_str} account={account} stream={stream}"
         )
+        logger.info(summary)
+        log_summary(context.metadata.get("content_request_id"), summary)
