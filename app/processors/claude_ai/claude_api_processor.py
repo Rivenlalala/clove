@@ -8,9 +8,10 @@ from typing import Dict
 from loguru import logger
 from fastapi.responses import StreamingResponse
 
-from app.models.claude import MessagesAPIRequest, TextContent
+from app.models.claude import MessagesAPIRequest
 from app.processors.base import BaseProcessor
 from app.processors.claude_ai import ClaudeAIContext
+from app.utils.claude_code_prefix import inject_claude_code_prefix
 from app.services.account import account_manager
 from app.services.cache import cache_service
 from app.core.exceptions import (
@@ -64,8 +65,6 @@ class ClaudeAPIProcessor(BaseProcessor):
             )
             return context
 
-        self._insert_system_message(context)
-
         try:
             # First try to get account from cache service
             cached_account_id, checkpoints = cache_service.process_messages(
@@ -88,6 +87,7 @@ class ClaudeAPIProcessor(BaseProcessor):
                 )
 
             with account:
+                inject_claude_code_prefix(context.messages_api_request)
                 request_json = context.messages_api_request.model_dump_json(
                     exclude_none=True
                 )
@@ -216,33 +216,6 @@ class ClaudeAPIProcessor(BaseProcessor):
             logger.debug("No accounts available for Claude API, continuing pipeline")
 
         return context
-
-    def _insert_system_message(self, context: ClaudeAIContext) -> None:
-        """Insert system message into the request."""
-
-        request = context.messages_api_request
-
-        # Handle system field
-        system_message_text = (
-            "You are Claude Code, Anthropic's official CLI for Claude."
-        )
-        system_message = TextContent(type="text", text=system_message_text)
-
-        if isinstance(request.system, str) and request.system:
-            request.system = [
-                system_message,
-                TextContent(type="text", text=request.system),
-            ]
-        elif isinstance(request.system, list) and request.system:
-            if any(
-                isinstance(block, TextContent) and block.text == system_message_text
-                for block in request.system
-            ):
-                logger.debug("System message already exists, skipping injection.")
-            else:
-                request.system = [system_message] + request.system
-        else:
-            request.system = [system_message]
 
     def _prepare_headers(
         self,
