@@ -50,7 +50,7 @@ async def verify_api_key(
         raise InvalidAPIKeyError()
 
     if api_key not in valid_keys:
-        raise InvalidAPIKeyError()
+        raise InvalidAPIKeyError(context={"api_key": api_key})
 
     return api_key
 
@@ -71,7 +71,7 @@ async def verify_admin_api_key(
         raise InvalidAPIKeyError()
 
     if api_key not in valid_keys:
-        raise InvalidAPIKeyError()
+        raise InvalidAPIKeyError(context={"api_key": api_key})
 
     return api_key
 
